@@ -3,17 +3,25 @@
 #include "parse.h"
 #endif
 
-#define dollar -1000
-#define epsilon -1
+#define dollar -1
+#define epsilon -1000
+#define num_terminals 10 	//smhow I need 2 know dis, don't count epsilon in num_terminals
 using namespace std;
 
-Parsing_table::Parsing_table(map<int, set<vector<int> > >& g, vector<int>& k) 
+Parsing_table::Parsing_table(map<int, set<vector<int> > >& g, vector<int>& k, map<int, std::string>& m) 
 {
 	grammar = g;
 	keys = k;
 	follow_changes = true;	//fr 1st iteration it shd b initialized 2 true
+	int_to_string = m;
 }
-
+Parsing_table::~Parsing_table()
+{
+	for (int i = 0; i < keys.size(); ++i){
+		delete[] table[i];
+	}
+	delete[] table;
+}
 void Parsing_table::construct_first_set()
 {
 	/*map<int, set<vector<int> > >::iterator map_iter;
@@ -27,7 +35,7 @@ void Parsing_table::construct_first_set()
 			}
 		}
 	}*/
-	for (int i = 0; i < keys.size(); ++i){
+	for (int i = 0; i < keys.size(); ++i){			//since in grammar d keys r only non-terminals, same in keys
 		if (!is_first_set_constructed(keys[i])){
 			construct_first_of(keys[i]);
 		}
@@ -141,4 +149,70 @@ bool Parsing_table::derives_element(int element, int item)
 {
 	if (first[item].count(element) > 0) return true;
 	else return false;
+}
+void Parsing_table::construct_table()
+{
+	//dis memory allocation will b done in constructor
+	//each cell of parsing table contains a production (in r case a vector<int>)
+	table = new vector<int> *[keys.size()];
+	for (int i = 0; i < keys.size(); ++i){
+		table[i] = new vector<int>[num_terminals];
+	}
+	set<vector<int> >::iterator set_iter;
+	for (int i = 0; i < keys.size(); ++i){
+		//grammar[keys[i]] is a set of vectors, actually a set of productions
+		int item = keys[i];		//item refers 2 d non-terminal whose productions v r currently examining
+		for(set_iter = grammar[item].begin(); set_iter != grammar[item].end(); ++set_iter){
+			//*set_iter is a vecor of int, the current production
+			vector<int> temp = *set_iter;
+			//temp[0] is an int. first[temp[0]] is a set of integers, actually a set of terminals
+			set<int >::iterator iter;
+			for(iter = first[temp[0]].begin(); iter != first[temp[0]].end(); ++iter){
+				//*iter is an int
+				if (table[item][*iter + num_terminals].size() > 0){
+					cerr << "There is a conflict in 2 productions corresponding 2 '" << int_to_string[item] << "'.hence\
+					 grammar is not LL1\n";
+					 exit(1);
+				}
+				table[item][*iter + num_terminals] = temp;
+			}
+			//r table will also hav table[item][epsilon] = epsilon though v'll never use it, it can b removed
+			if (first[temp[0]].count(epsilon) > 0){
+				for(iter = follow[item].begin(); iter != first[item].end(); ++iter){
+				//*iter is an int
+				if (table[item][*iter + num_terminals].size() > 0){
+					cerr << "There is a conflict in 2 productions corresponding 2 '" << int_to_string[item] << "'.hence\
+					 grammar is not LL1\n";
+					 exit(1);
+				}
+				table[item][*iter + num_terminals] = temp;
+				}
+			}
+		}
+	}
+}
+void Parsing_table::print_table()
+{
+	cout << "\t";
+	for (int i = 1; i <= num_terminals; ++i){
+		cout << int_to_string[-i] << "\t";
+	}
+	cout << "\n";
+	for (int i = 0; i < keys.size(); ++i){
+		cout << keys[i] << "\t";
+		for (int j = 0; j < num_terminals; ++j){
+			//table[i][j] is a vecor of int
+			vector<int> temp = table[i][j];
+			for (int k = 0; k < temp.size(); ++k){
+				cout << int_to_string[temp[k]];
+			}
+			cout << "\t";
+		}
+		cout << "\n";
+	}
+}
+int main()
+{
+
+	return 0;
 }
