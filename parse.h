@@ -31,7 +31,8 @@ private:
 	void add_first_to_first(int item1, int item2);	//adds first[item1] to first[item2]
 	void add_first_to_follow(int item1, int item2);	//adds first[item1] to follow[item2]
 	void add_follow_to_follow(int item1, int item2);//adds follow[item1] to follow[item2]
-	void add_element_to_follow(int element, int item);	//adds element to follow[item]
+	void add_element_to_follow(int element, int item);	//adds element which is a terminal to follow[item]
+	void print_production(int i, int j);
 public:
 	Parsing_table(std::map<int, std::set<std::vector<int> > >& g, std::vector<int>& k, std::map<int, std::string>& m);
 	~Parsing_table();
@@ -41,4 +42,6 @@ public:
 	std::set<int> get_follow_of(int item) { return follow[item]; };	//returns follow[item]
 	void construct_table();		//constructs parsing table based on first and follow sets
 	void print_table();
+	void print_first();
+	void print_follow();
 };
